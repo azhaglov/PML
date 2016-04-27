@@ -1,0 +1,109 @@
+> Training=read.csv(file="~/Desktop/Data Science/Coursera/Practical Machine Learning/Project/pml-training.csv",head=TRUE,sep=",",na.strings=c("NA","#DIV/0!",""))
+> Testing=read.csv(file="~/Desktop/Data Science/Coursera/Practical Machine Learning/Project/pml-testing.csv",head=TRUE,sep=",",na.strings=c("NA","#DIV/0!",""))
+> 
+> ## Exploring data
+> 
+> dim(Training)
+[1] 19622   160
+> table(Training$classe)
+
+   A    B    C    D    E 
+5580 3797 3422 3216 3607 
+> 
+> ## Partition training data into training and validation sets
+> set.seed(123456)
+> data <- createDataPartition(Training$classe, p = 0.8, list = FALSE)
+> training <- Training[data,]
+> validation <- Training[-data,]
+> 
+> ## Cleaning data: Excluding near zero value columns, not essential columns, columns with NA prevaling 
+> 
+> training<-training[,-seq(1:7)]
+> validation<-validation[,-seq(1:7)]
+> hasNA<-as.vector(sapply(training[,1:152],function(x) {length(which(is.na(x)))!=0}))
+> training<-training[,!hasNA]
+> validation<-validation[,!hasNA]
+> 
+> ## calling randomForest package 
+> 
+> library(randomForest)
+> 
+> ## Running RF model
+> rfModel <- randomForest(classe ~ ., data = training, importance = TRUE, ntrees = 10)
+> 
+> ## Running a prediction and evaluating accuracy:  
+> predtraining <- predict(rfModel, training)
+> print(confusionMatrix(predtraining, training$classe))
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 4464    0    0    0    0
+         B    0 3038    0    0    0
+         C    0    0 2738    0    0
+         D    0    0    0 2573    0
+         E    0    0    0    0 2886
+
+Overall Statistics
+                                     
+               Accuracy : 1          
+                 95% CI : (0.9998, 1)
+    No Information Rate : 0.2843     
+    P-Value [Acc > NIR] : < 2.2e-16  
+                                     
+                  Kappa : 1          
+ Mcnemar's Test P-Value : NA         
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+Pos Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Neg Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Prevalence             0.2843   0.1935   0.1744   0.1639   0.1838
+Detection Rate         0.2843   0.1935   0.1744   0.1639   0.1838
+Detection Prevalence   0.2843   0.1935   0.1744   0.1639   0.1838
+Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000
+> 
+> ## Running a prediction on validation set: 
+> predvalidation <- predict(rfModel, validation)
+> print(confusionMatrix(predvalidation, validation$classe))
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 1116    7    0    0    0
+         B    0  751    4    0    0
+         C    0    1  680    4    0
+         D    0    0    0  639    4
+         E    0    0    0    0  717
+
+Overall Statistics
+                                          
+               Accuracy : 0.9949          
+                 95% CI : (0.9921, 0.9969)
+    No Information Rate : 0.2845          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9936          
+ Mcnemar's Test P-Value : NA              
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            1.0000   0.9895   0.9942   0.9938   0.9945
+Specificity            0.9975   0.9987   0.9985   0.9988   1.0000
+Pos Pred Value         0.9938   0.9947   0.9927   0.9938   1.0000
+Neg Pred Value         1.0000   0.9975   0.9988   0.9988   0.9988
+Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+Detection Rate         0.2845   0.1914   0.1733   0.1629   0.1828
+Detection Prevalence   0.2863   0.1925   0.1746   0.1639   0.1828
+Balanced Accuracy      0.9988   0.9941   0.9963   0.9963   0.9972
+> 
+> predtest <- predict(rfModel, Testing)
+> ## Printing the results
+> predtest
+ 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+ B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+Levels: A B C D E
